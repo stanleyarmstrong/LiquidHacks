@@ -1,9 +1,6 @@
 from typing import List
 
-from gaming_mouse import *
 import re
-
-
 import scrapy
 
 
@@ -25,7 +22,8 @@ class LogitechgMiceSpider(scrapy.Spider):
 
                 mouse = {
                     "name": name,
-                    "product_url": product_url
+                    "product_url": product_url,
+                    "brand": "Logitech"
                 }
 
                 # Scrape the individual mouse's product page
