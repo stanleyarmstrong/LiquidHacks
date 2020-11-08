@@ -56,7 +56,7 @@ python -m pipenv run ./mouse_specs_scraper.py
 2. Get a link to the product page for each individual mouse and scrape that page
 3. Parse the information on the product page and save it to a json file
     1. Name
-    2. Physcical properties (Length, width, depth, weight, cable length, handedness)
+    2. Physical properties (Length, width, depth, weight, cable length, handedness)
     3. Sensor properties (sensor name, dpi/cpi, max acceleration, max speed)
     4. Wireless properties (rgb-on/average battery life, rgb-off/max battery life)
     5. Whether the mouse is RGB
