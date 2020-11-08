@@ -9,15 +9,15 @@ if __name__ == "__main__":
     #print(username)
     #print(password)
     dbname = "MouseData"
-    collectionname = "test"
+    collectionname = "products"
 
     client = MongoClient(f"mongodb+srv://{username}:{password}@liquidmouse.8pyh5.mongodb.net")
     db = client[dbname]
     test_collection = db[collectionname]
     print(db)
 
-    for document in test_collection.find():
-        print(document)
+    # for document in test_collection.find():
+    #     print(document)
 
     with open(Path('./mice.json')) as f:
         data = json.load(f)
