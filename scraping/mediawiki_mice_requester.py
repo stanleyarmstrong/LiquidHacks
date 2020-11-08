@@ -58,9 +58,11 @@ def update_cache(mediawiki_requests=None, cache_dir="./cache", rate_limit=30, re
             time.sleep(rate_limit)
 
 
-def process_cache(cache_dir="./cache", json_file='popularity.json'):
+def process_cache(cache_dir="./cache", json_file='./cache/popularity.json'):
     json_path = Path(json_file)
     cache_path = Path(cache_dir)
+
+    os.makedirs(os.path.dirname(json_path), exist_ok=True)
 
     with open(json_path, 'w') as jf:
         jf.truncate(0)
@@ -79,7 +81,7 @@ def process_cache(cache_dir="./cache", json_file='popularity.json'):
     process.start()
 
 
-def upload_popularity_stats(mongo_client, mongo_db, mongo_collection, json_file='popularity.json'):
+def upload_popularity_stats(mongo_client, mongo_db, mongo_collection, json_file='./cache/popularity.json'):
     db = mongo_client[mongo_db]
     collection = db[mongo_collection]
 
