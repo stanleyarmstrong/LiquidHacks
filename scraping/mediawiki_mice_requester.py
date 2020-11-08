@@ -2,6 +2,7 @@ import json
 import os
 import time
 import requests
+from hashlib import sha256
 from pathlib import Path
 
 from pymongo import MongoClient
@@ -16,73 +17,93 @@ PAGE_REQUESTS = [
     'https://liquipedia.net/valorant/api.php?action=parse&page=List of player mouse settings&prop=text&section=0&format=json',
     'https://liquipedia.net/apexlegends/api.php?action=parse&page=List of player mouse settings&prop=text&section=0&format=json']
 
-JSON_FILE = "./popularity.json"
+JSON_FILE = "popularity.json"
 
 # Comply to the liquidhacks TOS
-HEADERS = {'user-agent': 'liquidhacks-mouse-ranker/0.0.1 (Hydroptix#1869; frazee.samuel@gmail.com)', 'Accept-Encoding': 'gzip' }
-RATE_LIMIT = 30
+HEADERS = {'user-agent': 'liquidhacks-mouse-ranker/0.0.1 (Hydroptix#1869; frazee.samuel@gmail.com)',
+           'Accept-Encoding': 'gzip'}
 
-if __name__ == "__main__":
-    files = 0
+
+def update_cache(mediawiki_requests=None, cache_dir="./cache", rate_limit=30, request_headers=None, force=False):
+    if mediawiki_requests is None:
+        mediawiki_requests = PAGE_REQUESTS
+
+    if request_headers is None:
+        request_headers = HEADERS
+
     html_paths = []
     for page in PAGE_REQUESTS:
-        print(f"requesting \"{page}\"")
 
-        response = requests.get(page, headers=HEADERS)
+        # Get a unique hash for this request to identify the file
+        request_hash = sha256(bytes(page, "utf-8")).hexdigest()
 
-        if response.status_code == 429:
-            print("Rate limited, visit liquipedia.net to get unblocked")
-            exit(response.status_code)
-        else:
-            html = response.json()['parse']['text']['*']
+        file_path = Path(f'{cache_dir}/{request_hash}.html')
 
-        file_path = Path(f'./cache/stats_{files}.html')
-        html_paths.append(file_path.resolve().as_uri())
-        os.makedirs(os.path.dirname(file_path), exist_ok=True)
-        with open(file_path, 'w', encoding="utf-8") as f:
-            f.truncate(0)
-            f.write(html)
+        if force or not file_path.exists():
 
-        files += 1
+            response = requests.get(page, headers=HEADERS)
 
-        time.sleep(RATE_LIMIT)
+            if response.status_code == 429:
+                print("Rate limited, visit liquipedia.net to get unblocked")
+                return(response.status_code)
+            else:
+                html = response.json()['parse']['text']['*']
 
-    with open(JSON_FILE, 'w') as jf:
+            html_paths.append(file_path.resolve().as_uri())
+            os.makedirs(os.path.dirname(file_path), exist_ok=True)
+            with open(file_path, 'w', encoding="utf-8") as f:
+                f.truncate(0)
+                f.write(html)
+
+            time.sleep(rate_limit)
+
+
+def process_cache(cache_dir="./cache", json_file='popularity.json'):
+    json_path = Path(json_file)
+    cache_path = Path(cache_dir)
+
+    with open(json_path, 'w') as jf:
         jf.truncate(0)
 
     # Save output from the crawler to the JSON file
     process = CrawlerProcess(settings={
         "FEEDS": {
-            JSON_FILE: {"format": "json"},
+            str(json_path): {"format": "json"},
         },
     })
+
+    html_paths = [str(x.absolute().as_uri()) for x in cache_path.glob('*.html')]
 
     # Run the crawler
     process.crawl(EsportsLocalStatsSpider, filenames=html_paths)
     process.start()
 
-    total_stats = {}
+
+def upload_popularity_stats(mongo_client, mongo_db, mongo_collection, json_file='popularity.json'):
+    db = mongo_client[mongo_db]
+    collection = db[mongo_collection]
 
     # Read the JSON from the file
-    with open(Path(JSON_FILE)) as f:
+    with open(Path(json_file)) as f:
         data = json.load(f)
 
     # combine all the entries in the JSON file
+    total_stats = {}
     for mouse_json in data:
         mouse_dict = total_stats.setdefault(mouse_json['name'], {'name': mouse_json['name'], 'count': 0, 'players': []})
         mouse_dict['count'] += mouse_json['count']
         mouse_dict['players'].extend(mouse_json['players'])
 
-    # Add all mouse counts to mongodb
+    # Update all mouse counts in mongodb
+    for popularity_dict in total_stats.values():
+        collection.find_one_and_replace({'name': popularity_dict['name']}, popularity_dict, upsert=True)
+
+
+if __name__ == "__main__":
     username = os.getenv('MONGO_USER')
     password = os.getenv('MONGO_PASS')
+    mongo_client = MongoClient(f"mongodb+srv://{username}:{password}@liquidmouse.8pyh5.mongodb.net")
 
-    dbname = "MouseData"
-    collectionname = "popularity"
-
-    client = MongoClient(f"mongodb+srv://{username}:{password}@liquidmouse.8pyh5.mongodb.net")
-    db = client[dbname]
-    test_collection = db[collectionname]
-
-    for popularity_dict in total_stats.values():
-        test_collection.find_one_and_replace({'name': popularity_dict['name']}, popularity_dict, upsert=True)
+    update_cache()
+    process_cache()
+    upload_popularity_stats(mongo_client, 'MouseData', 'popularity')
