@@ -8,6 +8,8 @@ verify_ssl = true
 [packages]
 ipython = "*"
 scrapy = "*"
+pymongo = "*"
+dnspython = "==2.0.0"
 
 [requires]
 python_version = "3.7"
