@@ -20,12 +20,14 @@ class SteelseriesMiceSpider(scrapy.Spider):
             if name is not None:
                 name = name.strip()
                 product_url = response.urljoin(mouse_elem.css('a.catalog-list-product__link').attrib['href'])
+                img = response.css('img').attrib['src']
 
                 mouse = {
                     "name": name,
                     "display_name": name,
                     "product_url": product_url,
-                    "brand": "Steelseries"
+                    "brand": "Steelseries",
+                    "product_img": img
                 }
 
                 # Scrape the individual mouse's product page
