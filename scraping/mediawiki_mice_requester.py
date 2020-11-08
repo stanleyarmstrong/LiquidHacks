@@ -6,8 +6,9 @@ from pathlib import Path
 
 from pymongo import MongoClient
 from scrapy.crawler import CrawlerProcess
-from esports_mice_stats import EsportsLocalStatsSpider
+from scrapers.esports_mice_stats import EsportsLocalStatsSpider
 
+# Overwatch not included because its table has an inconsistent number of columns
 PAGE_REQUESTS = [
     'https://liquipedia.net/counterstrike/api.php?action=parse&page=List of player mouse settings/001-400&prop=text&section=1&format=json',
     'https://liquipedia.net/counterstrike/api.php?action=parse&page=List of player mouse settings/401-800&prop=text&section=1&format=json',
@@ -17,7 +18,9 @@ PAGE_REQUESTS = [
 
 JSON_FILE = "./popularity.json"
 
+# Comply to the liquidhacks TOS
 HEADERS = {'user-agent': 'liquidhacks-mouse-ranker/0.0.1 (Hydroptix#1869; frazee.samuel@gmail.com)', 'Accept-Encoding': 'gzip' }
+RATE_LIMIT = 30
 
 if __name__ == "__main__":
     files = 0
@@ -29,7 +32,7 @@ if __name__ == "__main__":
 
         if response.status_code == 429:
             print("Rate limited, visit liquipedia.net to get unblocked")
-            exit(-1)
+            exit(response.status_code)
         else:
             html = response.json()['parse']['text']['*']
 
@@ -42,7 +45,7 @@ if __name__ == "__main__":
 
         files += 1
 
-        time.sleep(30)
+        time.sleep(RATE_LIMIT)
 
     with open(JSON_FILE, 'w') as jf:
         jf.truncate(0)
