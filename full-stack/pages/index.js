@@ -1,7 +1,10 @@
 import Head from 'next/head'
 import { connectToDatabase } from '../util/mongodb'
+import MouseTile from '../components/mouse-tile'
 
 export default function Home({ isConnected }) {
+  var test = [1, 2, 3, 4];
+
   return (
     <div className="container">
       <Head>
@@ -10,6 +13,7 @@ export default function Home({ isConnected }) {
       </Head>
 
       <main>
+
         <h1 className="title">
           Welcome to <a href="https://nextjs.org">Next.js with MongoDB!</a>
         </h1>
@@ -26,6 +30,12 @@ export default function Home({ isConnected }) {
         <p className="description">
           Get started by editing <code>pages/index.js</code>
         </p>
+
+        <div className="grid">
+          {test.map(val => {
+            return <MouseTile key={val.toString()} />
+          })}
+        </div>
 
         <div className="grid">
           <a href="https://nextjs.org/docs" className="card">
@@ -56,6 +66,7 @@ export default function Home({ isConnected }) {
             </p>
           </a>
         </div>
+
       </main>
 
       <footer>
@@ -72,7 +83,7 @@ export default function Home({ isConnected }) {
       <style jsx>{`
         .container {
           min-height: 100vh;
-          padding: 0 0.5rem;
+          padding: 0 0.6rem;
           display: flex;
           flex-direction: column;
           justify-content: center;
@@ -158,7 +169,7 @@ export default function Home({ isConnected }) {
           justify-content: center;
           flex-wrap: wrap;
 
-          max-width: 800px;
+          max-width: 1200px;
           margin-top: 3rem;
         }
 
