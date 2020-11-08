@@ -17,21 +17,21 @@ PAGE_REQUESTS = [
 
 JSON_FILE = "./popularity.json"
 
+HEADERS = {'user-agent': 'liquidhacks-mouse-ranker/0.0.1 (Hydroptix#1869; frazee.samuel@gmail.com)', 'Accept-Encoding': 'gzip' }
+
 if __name__ == "__main__":
     files = 0
     html_paths = []
     for page in PAGE_REQUESTS:
         print(f"requesting \"{page}\"")
 
-        response = None
-        while response is None or response.status_code == 429:
-            response = requests.get(page)
+        response = requests.get(page, headers=HEADERS)
 
-            if response.status_code == 429:
-                print("Rate limited, waiting 30 seconds")
-                time.sleep(30)
-            else:
-                html = response.json()['parse']['text']['*']
+        if response.status_code == 429:
+            print("Rate limited, visit liquipedia.net to get unblocked")
+            exit(-1)
+        else:
+            html = response.json()['parse']['text']['*']
 
         file_path = Path(f'./cache/stats_{files}.html')
         html_paths.append(file_path.resolve().as_uri())
